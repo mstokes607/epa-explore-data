@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.counties {
+  fill: none;
+  stroke: #1a0000;
+}
+
+#sliderContainer {
+	margin-left:150px;
+    position: relative;
+    top: 1px;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+#mapTitle {
+	margin-left:20px;
+    font-family: Arial, Helvetica, sans-serif;
+}
+ 
+</style>
+<h2 id="mapTitle">Ozone Exceedances, California: 2012</h2>
+<svg width="960" height="450"></svg>
+<div id="sliderContainer">
+    <input id="timeslide" type="range" min="0" max="5" value="0" step="1"/><br>
+    <span id="range">2012</span>
+</div>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+<script src="https://d3js.org/topojson.v2.min.js"></script>
+<script>
+
+// Code for running the python dev server   
+// cd /Users/michaelstokes/Docs/Mike/d3/environment          
+// python -m SimpleHTTPServer 8888 &
+// open in chrome http://localhost:8888/CA_chloro.html
+
+var svg = d3.select("svg"),
+    width = +svg.attr("width"),
+    height = +svg.attr("height");
+
+// scales the map so size may be changed
+function scale (scaleFactor) {
+    return d3.geoTransform({
+        point: function(x, y) {
+            this.stream.point(x * scaleFactor, y  * scaleFactor);
+        }
+    });
+}
+
+var path = d3.geoPath().projection(scale(1.8));
+
+// color scale legend
+var x = d3.scaleLinear()
+    .domain([0, 45])
+    .rangeRound([600, 860]);
+
+var color = d3.scaleThreshold()
+    .domain([5, 10, 15, 20, 25, 30, 35, 40, 45])
+    .range(d3.schemeReds[9]);
+    //.range(d3.schemeSet3);
+
+var g = svg.append("g")
+    .attr("class", "key")
+    .attr("transform", "translate(-390,20)")
+    .style("font-size","12px");
+
+g.selectAll("rect")
+  .data(color.range().map(function(d) {
+      d = color.invertExtent(d);
+      if (d[0] == null) d[0] = x.domain()[0];
+      if (d[1] == null) d[1] = x.domain()[1];
+      return d;
+    }))
+  .enter().append("rect")
+    .attr("height", 12)
+    .attr("x", function(d) { return x(d[0]); })
+    .attr("width", function(d) { return x(d[1]) - x(d[0]); })
+    .attr("fill", function(d) { return color(d[0]); });
+
+g.append("text")
+    .attr("class", "caption")
+    .attr("x", x.range()[0])
+    .attr("y", -6)
+    .attr("fill", "#000")
+    .attr("text-anchor", "start")
+    .attr("font-weight", "bold")
+    .attr("font-size", "12px")
+    .text("% days ozone above National Air Quality Standard");
+
+g.call(d3.axisBottom(x)
+    .tickSize(12)
+    .tickFormat(function(x, i) { return i ? x : x; })
+    .tickValues(color.domain()))
+    .select(".domain")
+    .remove();
+    
+// time slider
+var inputValue = null;
+var year = ["2012","2013","2014","2015","2016","2017"];
+
+// ozone data
+var ozonejson;
+d3.json("CA_oz_data.json", function(error, d) {
+    if (error) throw "error";
+    ozonejson = d;
+    //console.log(ozonejson);
+    
+    // initialize map with 2012 data      
+    render(ozonejson, 'value_2012');
+});
+   
+// render the map
+function render(ozonedata, year) {
+  d3.json("https://d3js.org/us-10m.v1.json", function(mydata) {
+    svg.append("g")
+      .attr("class", "counties")
+      .selectAll("path")
+      .data( topojson.feature(mydata, mydata.objects.counties).features.filter(function(d) { return d.id.substr(0,2) == "06";}) )
+      .enter().append("path")
+      .attr("d", path)
+      .attr("fill", function(d) { 
+         // some counties have missing ozone data (requires condition)
+         if (d.id in ozonedata) { return color(d.rate = ozonedata[d.id][year]); };
+       })
+      .attr("transform", "translate(0,-280)")
+  });
+};
+
+// when the input range changes, update the value  
+d3.select("#timeslide").on("input", function() {
+    update(+this.value);
+});
+
+// create list of yearly properties for reference in update function
+var property_lst = ['value_2012', 'value_2013', 'value_2014', 'value_2015', 'value_2016', 'value_2017'];
+
+// updates the fill county attribute corresponding to year of ozone data
+function update(value) {
+    document.getElementById("range").innerHTML=year[value];
+    inputValue = year[value];
+    render(ozonejson, property_lst[value]);
+    document.getElementById("mapTitle").innerHTML = "Ozone Exceedances, California: " + year[value];
+    };
+</script>
