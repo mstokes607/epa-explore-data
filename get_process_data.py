@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 # Location of my data
-air_quality_folder = "/Users/michaelstokes/Docs/Mike/d3/environment/data/"  
+air_quality_folder = "my folder"  
 
 # Read in the data 
 aq_data_2017 = pd.read_csv(air_quality_folder + "CA_2017_OZONE.csv")
@@ -68,7 +68,7 @@ CA_2012_data = calculate(CA_2012,'2012')
 dfs = [CA_2017_data, CA_2016_data, CA_2015_data, CA_2014_data, CA_2013_data, CA_2012_data]
 CA_oz_combine = reduce(lambda left,right: pd.merge(left,right,on='id'), dfs)
 
-out_folder = '/Users/michaelstokes/Docs/Mike/d3/environment/'
+out_folder = 'my folder'
 filename = 'CA_oz_combine.csv'
 CA_oz_combine.to_csv(out_folder + filename, index=False)
 
