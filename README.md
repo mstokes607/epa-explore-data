@@ -14,4 +14,4 @@ Reads in raw daily ozone data. Current script uses data from California during 2
 
 Creates an interactive choropeth map for a visual display of the ozone data. HTML file takes the CA_oz_data.json file as input. 
 # acknowledgement
-d3js script from Mike Bostock's choropeth example: https://bl.ocks.org/mbostock/4060606 was used to help make my map     
+d3js script from Mike Bostock's choropeth example: https://bl.ocks.org/mbostock/4060606 was used to help make my map.     
